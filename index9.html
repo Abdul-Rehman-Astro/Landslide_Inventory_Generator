@@ -49,8 +49,8 @@
     <pre id="result"></pre>
 
     <script>
-        const API_KEY = 'PLAK525826dfc69a469cbbf3a5ad99c43872';
-        const API_URL = 'https://cors-proxy.htmldriven.com/?url=https://api.planet.com/data/v1/';
+        // const API_KEY = 'PLAK525826dfc69a469cbbf3a5ad99c43872';
+        const API_URL = 'https://api.wheretheiss.at/v1';
 
         async function fetchPlanetData() {
             const startDate = document.getElementById('startDate').value;
@@ -116,7 +116,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch data: ${response.statusText}`);
+                    throw new Error(`Unable to fetch data: ${response.statusText}`);
                 }
 
                 const data = await response.json();
