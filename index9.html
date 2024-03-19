@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planet Data Explorer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .filter-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .filter-container input {
+            padding: 5px;
+            margin-right: 10px;
+        }
+        #result {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Planet Data Explorer</h1>
+
+    <div class="filter-container">
+        <label>Date Range:</label>
+        <input type="date" id="startDate" placeholder="Start Date">
+        <input type="date" id="endDate" placeholder="End Date">
+    </div>
+
+    <div class="filter-container">
+        <label>Location:</label>
+        <input type="text" id="latitude" placeholder="Latitude">
+        <input type="text" id="longitude" placeholder="Longitude">
+    </div>
+
+    <div class="filter-container">
+        <label>Cloud Cover:</label>
+        <input type="number" id="cloudCover" placeholder="Cloud Cover (0-1)" min="0" max="1" step="0.1">
+    </div>
+
+    <button onclick="fetchPlanetData()">Fetch Data</button>
+    <pre id="result"></pre>
+
+    <script>
+        const API_KEY = 'PLAK525826dfc69a469cbbf3a5ad99c43872';
+        const API_URL = 'https://cors-proxy.htmldriven.com/?url=https://api.planet.com/data/v1/';
+
+        async function fetchPlanetData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const cloudCover = document.getElementById('cloudCover').value;
+
+            const geometry = {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [parseFloat(longitude) - 0.1, parseFloat(latitude) - 0.1],
+                        [parseFloat(longitude) + 0.1, parseFloat(latitude) - 0.1],
+                        [parseFloat(longitude) + 0.1, parseFloat(latitude) + 0.1],
+                        [parseFloat(longitude) - 0.1, parseFloat(latitude) + 0.1],
+                        [parseFloat(longitude) - 0.1, parseFloat(latitude) - 0.1]
+                    ]
+                ]
+            };
+
+            const geometryFilter = {
+                "type": "GeometryFilter",
+                "field_name": "geometry",
+                "config": geometry
+            };
+
+            const dateRangeFilter = {
+                "type": "DateRangeFilter",
+                "field_name": "acquired",
+                "config": {
+                    "gte": `${startDate}T00:00:00.000Z`,
+                    "lte": `${endDate}T23:59:59.999Z`
+                }
+            };
+
+            const cloudCoverFilter = {
+                "type": "RangeFilter",
+                "field_name": "cloud_cover",
+                "config": {
+                    "lte": cloudCover
+                }
+            };
+
+            const combinedFilter = {
+                "type": "AndFilter",
+                "config": [geometryFilter, dateRangeFilter, cloudCoverFilter]
+            };
+
+            const searchRequest = {
+                "item_types": ["PSScene"],
+                "filter": combinedFilter
+            };
+
+            try {
+                const response = await fetch(`${API_URL}quick-search`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `api-key ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(searchRequest)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('result').textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
